@@ -1,0 +1,26 @@
+
+# Node.js
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+dist/
+build/
+
+# Лог файлове
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Среда
+.env
+.env.*
+
+# IDE и редактори
+.vscode/
+.idea/
+
+# Системни файлове
+.DS_Store
+Thumbs.db
