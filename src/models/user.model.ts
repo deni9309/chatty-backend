@@ -1,6 +1,7 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, model, Document } from 'mongoose';
+import { IUser } from '../interfaces/user.interface';
 
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema<IUser>(
   {
     fullName: {
       type: String,
@@ -27,8 +28,11 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.index({ email: 1, isDeleted: 1 });
+userSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false } },
+);
 
-const User = mongoose.model('User', userSchema);
+const User = model<IUser>('User', userSchema);
 
 export default User;

@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { HttpException } from '../exceptions';
 
 export function errorHandler(
-  err: Error,
+  err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction,

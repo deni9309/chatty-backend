@@ -10,12 +10,7 @@ export class AuthController {
 
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const existingUser = await this.authService.userExists(req.body.email);
-      if (existingUser) {
-        throw new BadRequestException('Account with this email already in use');
-      }
-      
-      const user = await this.authService.register(req.body);
+      const user = await this.authService.register(req.body, res);
 
       res.status(201).json(user);
     } catch (error) {

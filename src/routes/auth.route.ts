@@ -3,6 +3,7 @@ import { container } from 'tsyringe';
 import { AuthController } from '../controllers/auth.controller';
 import { validationMiddleware } from '../middleware/validation.middleware';
 import { RegisterDto } from '../dtos/auth/register.dto';
+import { LoginDto } from '../dtos/auth/login.dto';
 
 const router = express.Router();
 const authController = container.resolve(AuthController);
@@ -10,10 +11,14 @@ const authController = container.resolve(AuthController);
 router.post(
   '/register',
   validationMiddleware(RegisterDto),
-  authController.register,
+  authController.register.bind(authController),
 );
 
-router.post('/login', authController.login);
+router.post(
+  '/login',
+  validationMiddleware(LoginDto),
+  authController.login.bind(authController),
+);
 
 router.post('/logout', authController.logout);
 
