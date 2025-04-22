@@ -6,4 +6,6 @@ export interface IUser extends Document {
   password: string;
   profilePic: string;
   isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

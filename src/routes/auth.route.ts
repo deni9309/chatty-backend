@@ -20,6 +20,6 @@ router.post(
   authController.login.bind(authController),
 );
 
-router.post('/logout', authController.logout);
+router.post('/logout', authController.logout.bind(authController));
 
 export default router;

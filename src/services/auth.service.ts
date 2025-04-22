@@ -5,8 +5,8 @@ import User from '../models/user.model';
 import { FilterQuery } from 'mongoose';
 import { RegisterDto } from '../dtos/auth/register.dto';
 import {
-  BadRequestException,
   ConflictException,
+  GoneException,
   InternalServerErrorException,
   UnauthorizedException,
 } from '../exceptions';
@@ -40,26 +40,31 @@ export class AuthService {
       if (error?.code === MONGODB.DUPLICATE_KEY) {
         throw new ConflictException('Account with this email already in use');
       }
-
       throw new InternalServerErrorException();
     }
 
     this.generateToken(user, res);
-    return user;
+    return this.mapUserResponse(user);
   }
 
-  async login({ email, password }: LoginDto) {
-    try {
-      const dbUsers = await User.find({ email });
+  async login({ email, password }: LoginDto, res: Response) {
+    const dbUsers = await User.find({ email });
+    if (dbUsers?.length === 0) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-      if (dbUsers.length === 0) {
-        throw new UnauthorizedException("User with this email doesn't exist");
-      }
-      const dbUser = dbUsers.filter((u) => u.isDeleted == false);
-      if (dbUser.length === 0) {
-        throw new UnauthorizedException('This user account has been deleted');
-      }
-    } catch (error) {}
+    const dbUser = dbUsers.filter((u) => u.isDeleted === false);
+    if (dbUser.length === 0) {
+      throw new GoneException('This user account is no longer available');
+    }
+
+    const isMatch = await bcrypt.compare(password, dbUser[0].password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    this.generateToken(dbUser[0], res);
+    return this.mapUserResponse(dbUser[0]);
   }
 
   async findOne(filter: FilterQuery<typeof User>) {
@@ -83,12 +88,23 @@ export class AuthService {
     });
 
     res.cookie('jwt', token, {
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 3600000,
       httpOnly: true,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
     });
 
     return token;
+  }
+
+  private mapUserResponse(user: IUser): Partial<IUser> {
+    return {
+      email: user.email,
+      fullName: user.fullName,
+      profilePic: user.profilePic,
+      isDeleted: user.isDeleted,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

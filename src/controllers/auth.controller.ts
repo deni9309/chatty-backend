@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { injectable, inject } from 'tsyringe';
 
 import { AuthService } from '../services/auth.service';
-import { BadRequestException } from '../exceptions';
 
 @injectable()
 export class AuthController {
@@ -18,11 +17,21 @@ export class AuthController {
     }
   }
 
-  async login(req: Request, res: Response) {
-    res.send('login route');
+  async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await this.authService.login(req.body, res);
+      res.status(200).json(user);
+    } catch (error) {
+      next(error);
+    }
   }
 
-  async logout(req: Request, res: Response) {
-    res.send('logout route');
+  async logout(_req: Request, res: Response, next: NextFunction) {
+    try {
+      res.cookie('jwt', '', { maxAge: 0 });
+      res.status(200).json({ message: 'Logout successful' });
+    } catch (error) {
+      next(error);
+    }
   }
 }
