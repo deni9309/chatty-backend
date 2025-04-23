@@ -4,6 +4,7 @@ import { AuthController } from '../controllers/auth.controller';
 import { validationMiddleware } from '../middleware/validation.middleware';
 import { RegisterDto } from '../dtos/auth/register.dto';
 import { LoginDto } from '../dtos/auth/login.dto';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = express.Router();
 const authController = container.resolve(AuthController);
@@ -21,5 +22,11 @@ router.post(
 );
 
 router.post('/logout', authController.logout.bind(authController));
+
+router.get(
+  '/me',
+  authMiddleware,
+  authController.getCurrentUser.bind(authController),
+);
 
 export default router;

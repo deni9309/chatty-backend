@@ -97,7 +97,7 @@ export class AuthService {
     return token;
   }
 
-  private mapUserResponse(user: IUser): Partial<IUser> {
+  mapUserResponse(user: IUser): Partial<IUser> {
     return {
       email: user.email,
       fullName: user.fullName,
@@ -106,5 +106,23 @@ export class AuthService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  async verifyUser(email: string) {
+    const user = await User.findOne(
+      { email, isDeleted: false },
+      { _id: 1, email: 1, fullName: 1, profilePic: 1 },
+    );
+
+    if (!user) throw new UnauthorizedException();
+    
+    const verifiedUser: TokenPayload = {
+      _id: (user._id as any).toHexString(),
+      fullName: user.fullName,
+      email: user.email,
+      profilePic: user.profilePic,
+    };
+
+    return verifiedUser;
   }
 }

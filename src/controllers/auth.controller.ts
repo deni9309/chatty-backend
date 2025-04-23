@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { injectable, inject } from 'tsyringe';
 
 import { AuthService } from '../services/auth.service';
+import { Types } from 'mongoose';
+import { RequestWithUser } from '../interfaces/request.interface';
+import { NotFoundException } from '../exceptions';
 
 @injectable()
 export class AuthController {
@@ -30,6 +33,25 @@ export class AuthController {
     try {
       res.cookie('jwt', '', { maxAge: 0 });
       res.status(200).json({ message: 'Logout successful' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getCurrentUser(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const _id = req.user?._id && new Types.ObjectId(req.user._id);
+      const user = await this.authService.findOne({ _id });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const userResponse = this.authService.mapUserResponse(user!);
+      res.status(200).json(userResponse);
     } catch (error) {
       next(error);
     }

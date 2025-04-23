@@ -10,6 +10,11 @@ export function errorHandler(
 ) {
   if (err instanceof HttpException) {
     res.status(err.status).json({ message: err.message });
+  } else if (
+    err instanceof Error &&
+    (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError')
+  ) {
+    res.status(401).json({ message: 'Invalid or expired token' });
   } else {
     console.error('Unexpected error:', err);
     res.status(500).json({ message: 'Internal Server Error' });
