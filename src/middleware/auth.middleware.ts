@@ -1,9 +1,9 @@
 import { container } from 'tsyringe';
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 import { AuthService } from '../services/auth.service';
-import { RequestWithUser } from '../interfaces/request.interface';
+import { RequestWithUser } from '../interfaces';
 import { TokenPayload } from '../types/token-payload';
 import { UnauthorizedException } from '../exceptions';
 

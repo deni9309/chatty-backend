@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { injectable, inject } from 'tsyringe';
+import { Types } from 'mongoose';
 
 import { AuthService } from '../services/auth.service';
-import { Types } from 'mongoose';
-import { RequestWithUser } from '../interfaces/request.interface';
-import { NotFoundException, UnauthorizedException } from '../exceptions';
+import { RequestWithUser } from '../interfaces';
+import { NotFoundException } from '../exceptions';
 
 @injectable()
 export class AuthController {

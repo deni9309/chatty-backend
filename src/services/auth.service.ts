@@ -1,21 +1,21 @@
 import { injectable } from 'tsyringe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/user.model';
 import { FilterQuery, Types } from 'mongoose';
-import { RegisterDto } from '../dtos/auth/register.dto';
+import { Response } from 'express';
+
 import {
-  BadRequestException,
   ConflictException,
   GoneException,
   InternalServerErrorException,
   UnauthorizedException,
 } from '../exceptions';
-import { Response } from 'express';
+import User from '../models/user.model';
+import { RegisterDto } from '../dtos/auth/register.dto';
 import { TokenPayload } from '../types/token-payload';
 import { MONGODB } from '../constants/db-constants';
 import { LoginDto } from '../dtos/auth/login.dto';
-import { IUser } from '../interfaces/user.interface';
+import { IUser } from '../interfaces';
 import { UpdateUserDto } from '../dtos/auth/update-user.dto';
 
 @injectable()

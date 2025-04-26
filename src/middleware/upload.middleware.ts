@@ -4,7 +4,7 @@ import { Readable } from 'stream';
 
 import cloudinary from '../lib/cloudinary';
 import { UploadApiResponse } from 'cloudinary/types';
-import { RequestWithUser } from '../interfaces/request.interface';
+import { RequestWithUser } from '../interfaces';
 import { BadRequestException } from '../exceptions';
 
 const storage = multer.memoryStorage();
@@ -48,7 +48,7 @@ export const uploadToCloudinary = async (
         },
         (error, result) => {
           if (error || !result) return reject(error);
-          
+
           resolve(result);
         },
       );

@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import { container } from 'tsyringe';
 import { AuthController } from '../controllers/auth.controller';
 import { validationMiddleware } from '../middleware/validation.middleware';
@@ -6,9 +6,12 @@ import { RegisterDto } from '../dtos/auth/register.dto';
 import { LoginDto } from '../dtos/auth/login.dto';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { UpdateUserDto } from '../dtos/auth/update-user.dto';
-import { uploadProfilePic, uploadToCloudinary } from '../middleware/upload.middleware';
+import {
+  uploadProfilePic,
+  uploadToCloudinary,
+} from '../middleware/upload.middleware';
 
-const router = express.Router();
+const router = Router();
 const authController = container.resolve(AuthController);
 
 router.post(
