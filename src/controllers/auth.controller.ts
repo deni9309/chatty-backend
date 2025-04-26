@@ -4,7 +4,7 @@ import { injectable, inject } from 'tsyringe';
 import { AuthService } from '../services/auth.service';
 import { Types } from 'mongoose';
 import { RequestWithUser } from '../interfaces/request.interface';
-import { NotFoundException } from '../exceptions';
+import { NotFoundException, UnauthorizedException } from '../exceptions';
 
 @injectable()
 export class AuthController {
@@ -52,6 +52,17 @@ export class AuthController {
       }
       const userResponse = this.authService.mapUserResponse(user!);
       res.status(200).json(userResponse);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateUser(req: RequestWithUser, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?._id ?? '';
+
+      const user = await this.authService.updateUser(userId, req.body);
+      res.status(200).json(user);
     } catch (error) {
       next(error);
     }

@@ -2,9 +2,10 @@ import { injectable } from 'tsyringe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model';
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 import { RegisterDto } from '../dtos/auth/register.dto';
 import {
+  BadRequestException,
   ConflictException,
   GoneException,
   InternalServerErrorException,
@@ -15,6 +16,7 @@ import { TokenPayload } from '../types/token-payload';
 import { MONGODB } from '../constants/db-constants';
 import { LoginDto } from '../dtos/auth/login.dto';
 import { IUser } from '../interfaces/user.interface';
+import { UpdateUserDto } from '../dtos/auth/update-user.dto';
 
 @injectable()
 export class AuthService {
@@ -97,6 +99,18 @@ export class AuthService {
     return token;
   }
 
+  async updateUser(id: string, data: UpdateUserDto) {
+    const user = await User.findOneAndUpdate(
+      { _id: new Types.ObjectId(id), isDeleted: false },
+      data,
+      { new: true },
+    )
+      .select('-password')
+      .lean<Partial<IUser>>();
+
+    return user;
+  }
+
   mapUserResponse(user: IUser): Partial<IUser> {
     return {
       email: user.email,
@@ -115,7 +129,7 @@ export class AuthService {
     );
 
     if (!user) throw new UnauthorizedException();
-    
+
     const verifiedUser: TokenPayload = {
       _id: (user._id as any).toHexString(),
       fullName: user.fullName,
