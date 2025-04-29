@@ -8,7 +8,7 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { UpdateUserDto } from '../dtos/auth/update-user.dto';
 import {
   uploadProfilePic,
-  uploadToCloudinary,
+  uploadProfilePicMiddleware,
 } from '../middleware/upload.middleware';
 
 const router = Router();
@@ -38,7 +38,7 @@ router.put(
   '/update',
   authMiddleware,
   uploadProfilePic,
-  uploadToCloudinary,
+  uploadProfilePicMiddleware,
   validationMiddleware(UpdateUserDto),
   authController.updateUser.bind(authController),
 );

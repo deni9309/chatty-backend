@@ -5,7 +5,7 @@ import { Readable } from 'stream';
 import cloudinary from '../lib/cloudinary';
 import { UploadApiResponse } from 'cloudinary/types';
 import { RequestWithUser } from '../interfaces';
-import { BadRequestException } from '../exceptions';
+import { BadRequestException, UnauthorizedException } from '../exceptions';
 
 const storage = multer.memoryStorage();
 const fileFilter = (
@@ -28,8 +28,9 @@ const limits = { fileSize: 5 * 1024 * 1024 };
 const upload = multer({ storage, fileFilter, limits });
 
 export const uploadProfilePic = upload.single('profilePic');
+export const uploadMessageImage = upload.single('image');
 
-export const uploadToCloudinary = async (
+export const uploadProfilePicMiddleware = async (
   req: RequestWithUser,
   res: Response,
   next: NextFunction,
@@ -56,6 +57,48 @@ export const uploadToCloudinary = async (
     });
 
     req.body.profilePic = result.secure_url;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadMessageImageMiddleware = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user) {
+    throw new UnauthorizedException('You must be logged in to send a message');
+  }
+  if (!req.params.id) {
+    throw new BadRequestException('Receiver not provided');
+  }
+  if (req.user._id === req.params.id) {
+    throw new BadRequestException('Cannot send message to yourself');
+  }
+
+  if (!req.file) return next();
+
+  try {
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'chatty_message_images',
+          public_id: `msg_${req.user!._id}`,
+          resource_type: 'image',
+          overwrite: true,
+        },
+        (error, result) => {
+          if (error || !result) return reject(error);
+
+          resolve(result);
+        },
+      );
+      Readable.from(req.file?.buffer ?? []).pipe(uploadStream);
+    });
+
+    req.body.image = result.secure_url;
     next();
   } catch (error) {
     next(error);

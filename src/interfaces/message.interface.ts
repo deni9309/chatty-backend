@@ -6,4 +6,6 @@ export default interface IMessage extends Document {
   text: string;
   image: string;
   isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
