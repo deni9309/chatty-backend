@@ -1,15 +1,12 @@
 import { injectable } from 'tsyringe';
+import { Document, FilterQuery, MergeType, Types } from 'mongoose';
+
 import Message from '../models/message.model';
 import User from '../models/user.model';
 import { IMessage, IUser } from '../interfaces';
-import { Document, FilterQuery, MergeType, Types } from 'mongoose';
 import { CreateMessageDto } from '../dtos/messages/create-message.dto';
-import {
-  BadRequestException,
-  UnprocessableEntityException,
-} from '../exceptions';
+import { UnprocessableEntityException } from '../exceptions';
 import { TMessagePopulated } from '../types/message.type';
-import { TUser } from '../types/user.type';
 
 @injectable()
 export class MessagesService {

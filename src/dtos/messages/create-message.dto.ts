@@ -1,4 +1,4 @@
-import { IsOptional, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, MaxLength } from 'class-validator';
 
 export class CreateMessageDto {
   @IsOptional()

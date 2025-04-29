@@ -1,5 +1,3 @@
-import { TUser } from './user.type';
-
 export type TMessage = {
   _id: string;
   senderId: string;

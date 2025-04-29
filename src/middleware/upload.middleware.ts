@@ -1,9 +1,9 @@
 import multer from 'multer';
 import { Request, Response, NextFunction } from 'express';
 import { Readable } from 'stream';
+import { UploadApiResponse } from 'cloudinary/types';
 
 import cloudinary from '../lib/cloudinary';
-import { UploadApiResponse } from 'cloudinary/types';
 import { RequestWithUser } from '../interfaces';
 import { BadRequestException, UnauthorizedException } from '../exceptions';
 
