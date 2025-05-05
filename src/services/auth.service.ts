@@ -17,6 +17,7 @@ import { MONGODB } from '../constants/db-constants';
 import { LoginDto } from '../dtos/auth/login.dto';
 import { IUser } from '../interfaces';
 import { UpdateUserDto } from '../dtos/auth/update-user.dto';
+import { UserResponse } from '../types/user-response.type';
 
 @injectable()
 export class AuthService {
@@ -45,8 +46,8 @@ export class AuthService {
       throw new InternalServerErrorException();
     }
 
-    this.generateToken(user, res);
-    return this.mapUserResponse(user);
+    const token = this.generateToken(user, res);
+    return { ...this.mapUserResponse(user), token };
   }
 
   async login({ email, password }: LoginDto, res: Response) {
@@ -65,8 +66,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    this.generateToken(dbUser[0], res);
-    return this.mapUserResponse(dbUser[0]);
+    const token = this.generateToken(dbUser[0], res);
+    return {
+      ...this.mapUserResponse(dbUser[0]),
+      token,
+    };
   }
 
   async findOne(filter: FilterQuery<typeof User>) {
@@ -111,8 +115,9 @@ export class AuthService {
     return user;
   }
 
-  mapUserResponse(user: IUser): Partial<IUser> {
+  mapUserResponse(user: IUser): UserResponse {
     return {
+      _id: (user._id as any).toHexString(),
       email: user.email,
       fullName: user.fullName,
       profilePic: user.profilePic,
