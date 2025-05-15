@@ -108,11 +108,9 @@ export class AuthService {
       { _id: new Types.ObjectId(id), isDeleted: false },
       data,
       { new: true },
-    )
-      .select('-password')
-      .lean<Partial<IUser>>();
+    ).lean<IUser>();
 
-    return user;
+    return user ? this.mapUserResponse(user) : null;
   }
 
   mapUserResponse(user: IUser): UserResponse {
