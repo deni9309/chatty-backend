@@ -11,5 +11,5 @@ export class UpdateUserDto {
   email?: string;
 
   @IsOptional()
-  profilePic?: string | Express.Multer.File;
+  profilePic?: string;
 }

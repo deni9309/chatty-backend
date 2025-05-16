@@ -35,8 +35,22 @@ export const uploadProfilePicMiddleware = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req.file) return next();
   if (!req.user) throw new BadRequestException('User not found');
+
+  if (req.body.profilePic === '') {
+    try {
+      const publicId = `chatty_profile_pics/${req.user._id}`;
+      await cloudinary.uploader.destroy(publicId);
+      req.body.profilePic = '';
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      next(error);
+      return;
+    }
+    return next();
+  }
+
+  if (!req.file) return next();
 
   try {
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
@@ -104,3 +118,16 @@ export const uploadMessageImageMiddleware = async (
     next(error);
   }
 };
+
+// async function deleteImage(imageUrl: string) {
+//   const publicId = extractPublicId(imageUrl);
+//   if (publicId) {
+//     await cloudinary.uploader.destroy(publicId);
+//   }
+// }
+
+// function extractPublicId(url: string): string | null {
+//   const regex = /\/v\d+\/(.+)\.(jpg|jpeg|png|webp|gif)$/i;
+//   const match = url.match(regex);
+//   return match ? match[1] : null;
+// }
