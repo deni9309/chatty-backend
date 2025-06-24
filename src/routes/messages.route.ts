@@ -14,7 +14,7 @@ const router = Router();
 const messagesController = container.resolve(MessagesController);
 
 router.get(
-  '/other-users',
+  '/users',
   authMiddleware,
   messagesController.getUsers.bind(messagesController),
 );
