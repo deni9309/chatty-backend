@@ -55,7 +55,8 @@ export class MessagesService {
     const message = new Message({
       senderId: new Types.ObjectId(senderId),
       receiverId: new Types.ObjectId(receiverId),
-      ...data,
+      text: data.text || '',
+      image: data.image || '',
       isDeleted: false,
     });
 
@@ -72,6 +73,7 @@ export class MessagesService {
 
       return this.mapMessageResponse(result);
     } catch (error) {
+      console.log(error)
       throw new UnprocessableEntityException('Message creation failed');
     }
   }

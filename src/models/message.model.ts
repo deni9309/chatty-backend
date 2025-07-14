@@ -15,7 +15,7 @@ const messageSchema = new Schema<IMessage>(
     },
     text: {
       type: String,
-      required: true,
+      default: '',
     },
     image: {
       type: String,
