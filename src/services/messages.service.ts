@@ -42,7 +42,7 @@ export class MessagesService {
     }
 
     return Message.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .lean<IMessage[]>()
       .exec();
   }
