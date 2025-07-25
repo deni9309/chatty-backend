@@ -5,8 +5,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.route';
 import messagesRoutes from './routes/messages.route';
 import { errorHandler } from './middleware/error.middleware';
-
-const app = express();
+import { app } from './lib/socket-io';
 
 app.use(express.json());
 app.use(cookieParser());
