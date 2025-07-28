@@ -9,6 +9,13 @@ const io = new Server(server, {
   cors: {
     origin: ['http://localhost:5173'],
     credentials: true,
+    allowedHeaders: [
+      'Authorization',
+      'Content-Type',
+      'x-csrf-token',
+      'x-refresh-token',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   },
 });
 

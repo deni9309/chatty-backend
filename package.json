@@ -1,7 +1,7 @@
 {
   "name": "chatty-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "start": "ts-node src/index.ts",
     "dev": "nodemon ts-node src/index.ts",
@@ -27,6 +27,7 @@
     "mongodb": "^6.15.0",
     "mongoose": "^8.13.2",
     "multer": "^1.4.5-lts.2",
+    "path": "^0.12.7",
     "reflect-metadata": "^0.2.2",
     "socket.io": "^4.8.1",
     "tsyringe": "^4.10.0"
