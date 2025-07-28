@@ -20,62 +20,38 @@ const io = new Server(server, {
 });
 
 // Store online users
-const onlineUsers = new Map<string, string>(); // userId -> socketId
+const userSocketMap = new Map<string, string>();
+
+export function getReceiverSocketId(userId: string) {
+  return userSocketMap.get(userId);
+}
 
 io.on('connection', (socket) => {
   console.log('A user connected', socket.id);
 
-  // Handle user joining
-  socket.on('user_online', (userId: string) => {
-    onlineUsers.set(userId, socket.id);
-    socket.broadcast.emit('user_status', { userId, status: 'online' });
-    console.log(`User ${userId} is online`);
-  });
+  const userId = socket.handshake.query.userId as string;
+  if (userId && !userSocketMap.has(userId)) {
+    userSocketMap.set(userId, socket.id);
+    io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
 
-  // Handle joining chat rooms (for private messages)
-  socket.on('join_chat', (chatId: string) => {
-    socket.join(chatId);
-    console.log(`Socket ${socket.id} joined chat ${chatId}`);
-  });
+    socket.broadcast.emit('userStatus', { userId, status: 'online' });
+    console.log(
+      `User with ID ${userId} is online.\nOnline users: ${userSocketMap.size}`,
+    );
+  }
 
-  // Handle sending messages
-  socket.on(
-    'send_message',
-    (messageData: { chatId: string; message: any; receiverId: string }) => {
-      // Emit to all users in the chat room
-      socket
-        .to(messageData.chatId)
-        .emit('receive_message', messageData.message);
-
-      // Optionally, emit to specific receiver if they're online
-      const receiverSocketId = onlineUsers.get(messageData.receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit('new_message_notification', {
-          chatId: messageData.chatId,
-          message: messageData.message,
-        });
-      }
-    },
-  );
-
-  // Handle typing indicators
-  socket.on('typing_start', (data: { chatId: string; userId: string }) => {
-    socket.to(data.chatId).emit('user_typing', data);
-  });
-
-  socket.on('typing_stop', (data: { chatId: string; userId: string }) => {
-    socket.to(data.chatId).emit('user_stop_typing', data);
-  });
-
-  // Handle user leaving
   socket.on('disconnect', () => {
     console.log('A user disconnected', socket.id);
 
-    // Remove user from online list
-    for (const [userId, socketId] of onlineUsers.entries()) {
+    for (const [userId, socketId] of userSocketMap.entries()) {
       if (socketId === socket.id) {
-        onlineUsers.delete(userId);
-        socket.broadcast.emit('user_status', { userId, status: 'offline' });
+        userSocketMap.delete(userId);
+        io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
+
+        socket.broadcast.emit('userStatus', { userId, status: 'offline' });
+        console.log(
+          `User with ID ${userId} went offline.\nOnline users: ${userSocketMap.size}`,
+        );
         break;
       }
     }
