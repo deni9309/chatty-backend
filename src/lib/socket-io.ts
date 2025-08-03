@@ -26,29 +26,68 @@ export function getReceiverSocketId(userId: string) {
   return userSocketMap.get(userId);
 }
 
+// Cleanup orphaned connections every minute
+setInterval(() => {
+  let cleanedUp = 0;
+  for (const [userId, socketId] of userSocketMap.entries()) {
+    if (!io.sockets.sockets.has(socketId)) {
+      userSocketMap.delete(userId);
+      cleanedUp++;
+    }
+  }
+  if (cleanedUp > 0) {
+    console.log(`Cleaned up ${cleanedUp} orphaned connections`);
+    // Broadcast updated online users after cleanup
+    const onlineUserIds = Array.from(userSocketMap.keys());
+    io.emit('get_online_users', onlineUserIds);
+  }
+}, 60000);
+
 io.on('connection', (socket) => {
   console.log('A user connected', socket.id);
 
   const userId = socket.handshake.query.userId as string;
-  if (userId && !userSocketMap.has(userId)) {
-    userSocketMap.set(userId, socket.id);
-    io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
 
-    socket.broadcast.emit('userStatus', { userId, status: 'online' });
+  if (userId) {
+    const existingSocketId = userSocketMap.get(userId);
+
+    if (existingSocketId && io.sockets.sockets.has(existingSocketId)) {
+      // Disconnect the old socket
+      io.sockets.sockets.get(existingSocketId)?.disconnect();
+      console.log(`Disconnected previous connection for user ${userId}`);
+    }
+
+    userSocketMap.set(userId, socket.id);
+    const onlineUserIds = Array.from(userSocketMap.keys());
+
+    // Send current online users to the newly connected user first
+    socket.emit('get_online_users', onlineUserIds);
+
+    io.emit('get_online_users', onlineUserIds);
+    io.emit('user_status', { userId, status: 'online' });
+
     console.log(
       `User with ID ${userId} is online.\nOnline users: ${userSocketMap.size}`,
     );
   }
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected', socket.id);
+  // Add handler for requesting online users
+  socket.on('request_online_users', () => {
+    const onlineUserIds = Array.from(userSocketMap.keys());
+    socket.emit('get_online_users', onlineUserIds);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('A user disconnected', socket.id, 'Reason:', reason);
 
     for (const [userId, socketId] of userSocketMap.entries()) {
       if (socketId === socket.id) {
         userSocketMap.delete(userId);
-        io.emit('getOnlineUsers', Array.from(userSocketMap.keys()));
+        const onlineUserIds = Array.from(userSocketMap.keys());
+        
+        io.emit('get_online_users', onlineUserIds);
+        io.emit('user_status', { userId, status: 'offline' });
 
-        socket.broadcast.emit('userStatus', { userId, status: 'offline' });
         console.log(
           `User with ID ${userId} went offline.\nOnline users: ${userSocketMap.size}`,
         );
