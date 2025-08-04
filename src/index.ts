@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
@@ -11,7 +12,6 @@ import authRoutes from './routes/auth.route';
 import messagesRoutes from './routes/messages.route';
 import { errorHandler } from './middleware/error.middleware';
 
-dotenv.config();
 const PORT = process.env.PORT || 5001;
 
 app.use(express.json());

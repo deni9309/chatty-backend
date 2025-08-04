@@ -6,7 +6,8 @@ import User from '../models/user.model';
 import { IMessage, IUser } from '../interfaces';
 import { CreateMessageDto } from '../dtos/messages/create-message.dto';
 import { UnprocessableEntityException } from '../exceptions';
-import { TMessagePopulated } from '../types/message.type';
+import { TMessage, TMessagePopulated } from '../types/message.type';
+import { getReceiverSocketId, io } from '../lib/socket-io';
 
 @injectable()
 export class MessagesService {
@@ -41,10 +42,7 @@ export class MessagesService {
       if (endDate) query.createdAt.$lte = endDate;
     }
 
-    return Message.find(query)
-      .sort({ createdAt: 1 })
-      .lean<IMessage[]>()
-      .exec();
+    return Message.find(query).sort({ createdAt: 1 }).lean<IMessage[]>().exec();
   }
 
   async createMessage(
@@ -71,9 +69,17 @@ export class MessagesService {
         select: 'fullName email profilePic',
       });
 
+      const receiverSocketId = getReceiverSocketId(receiverId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit(
+          'new_message',
+          this.mapMessageForSubscriptionResponse(result),
+        );
+      }
+
       return this.mapMessageResponse(result);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new UnprocessableEntityException('Message creation failed');
     }
   }
@@ -100,6 +106,28 @@ export class MessagesService {
         profilePic: doc.receiverId.profilePic,
         _id: (doc.receiverId._id as any).toHexString(),
       },
+      image: doc.image,
+      text: doc.text,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      isDeleted: doc.isDeleted,
+    };
+
+    return response;
+  }
+
+  private mapMessageForSubscriptionResponse(
+    doc: MergeType<
+      Document<unknown, {}, IMessage> &
+        IMessage &
+        Required<{ _id: unknown }> & { __v: number },
+      { senderId: IUser; receiverId: IUser }
+    >,
+  ) {
+    const response: TMessage = {
+      _id: (doc._id as any).toHexString(),
+      senderId: (doc.senderId._id as any).toHexString(),
+      receiverId: (doc.receiverId._id as any).toHexString(),
       image: doc.image,
       text: doc.text,
       createdAt: doc.createdAt,
