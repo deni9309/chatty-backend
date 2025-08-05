@@ -19,7 +19,6 @@ const io = new Server(server, {
   },
 });
 
-// Store online users
 const userSocketMap = new Map<string, string>();
 
 export function getReceiverSocketId(userId: string) {
@@ -52,7 +51,6 @@ io.on('connection', (socket) => {
     const existingSocketId = userSocketMap.get(userId);
 
     if (existingSocketId && io.sockets.sockets.has(existingSocketId)) {
-      // Disconnect the old socket
       io.sockets.sockets.get(existingSocketId)?.disconnect();
       console.log(`Disconnected previous connection for user ${userId}`);
     }
@@ -60,7 +58,6 @@ io.on('connection', (socket) => {
     userSocketMap.set(userId, socket.id);
     const onlineUserIds = Array.from(userSocketMap.keys());
 
-    // Send current online users to the newly connected user first
     socket.emit('get_online_users', onlineUserIds);
 
     io.emit('get_online_users', onlineUserIds);
@@ -69,9 +66,28 @@ io.on('connection', (socket) => {
     console.log(
       `User with ID ${userId} is online.\nOnline users: ${userSocketMap.size}`,
     );
+
+    socket.on('typing', ({ receiverId }: { receiverId: string }) => {
+      const receiverSocketId = getReceiverSocketId(receiverId);
+      if (receiverSocketId) {
+        socket.to(receiverSocketId).emit('user_typing', {
+          userId,
+          isTyping: true,
+        });
+      }
+    });
+
+    socket.on('stop_typing', ({ receiverId }: { receiverId: string }) => {
+      const receiverSocketId = getReceiverSocketId(receiverId);
+      if (receiverSocketId) {
+        socket.to(receiverSocketId).emit('user_typing', {
+          userId,
+          isTyping: false,
+        });
+      }
+    });
   }
 
-  // Add handler for requesting online users
   socket.on('request_online_users', () => {
     const onlineUserIds = Array.from(userSocketMap.keys());
     socket.emit('get_online_users', onlineUserIds);
@@ -84,7 +100,7 @@ io.on('connection', (socket) => {
       if (socketId === socket.id) {
         userSocketMap.delete(userId);
         const onlineUserIds = Array.from(userSocketMap.keys());
-        
+
         io.emit('get_online_users', onlineUserIds);
         io.emit('user_status', { userId, status: 'offline' });
 
