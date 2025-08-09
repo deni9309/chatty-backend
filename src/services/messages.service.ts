@@ -3,11 +3,12 @@ import { Document, FilterQuery, MergeType, Types } from 'mongoose';
 
 import Message from '../models/message.model';
 import User from '../models/user.model';
-import { IMessage, IUser } from '../interfaces';
+import { IMessage, IUnreadMessage, IUser } from '../interfaces';
 import { CreateMessageDto } from '../dtos/messages/create-message.dto';
 import { UnprocessableEntityException } from '../exceptions';
 import { TMessage, TMessagePopulated } from '../types/message.type';
-import { getReceiverSocketId, io } from '../lib/socket-io';
+import { getOnlineUserIds, getReceiverSocketId, io } from '../lib/socket-io';
+import UnreadMessage from '../models/unread-message.model';
 
 @injectable()
 export class MessagesService {
@@ -77,11 +78,44 @@ export class MessagesService {
         );
       }
 
+      const isReceiverOnline = getOnlineUserIds().includes(receiverId);
+      if (!isReceiverOnline) {
+        await UnreadMessage.create({
+          senderId: new Types.ObjectId(senderId),
+          receiverId: new Types.ObjectId(receiverId),
+          messageId: message._id,
+          isDeleted: false,
+          isRead: false,
+        });
+      }
+
       return this.mapMessageResponse(result);
     } catch (error) {
       console.log(error);
       throw new UnprocessableEntityException('Message creation failed');
     }
+  }
+
+  async getMineUnreadMessages(receiverId: string) {
+    return UnreadMessage.find({
+      receiverId: new Types.ObjectId(receiverId),
+      isDeleted: false,
+      isRead: false,
+    })
+      .lean<IUnreadMessage[]>()
+      .exec();
+  }
+
+  async markMineMessagesFromSenderAsRead(senderId: string, receiverId: string) {
+    return UnreadMessage.updateMany(
+      {
+        senderId: new Types.ObjectId(senderId),
+        receiverId: new Types.ObjectId(receiverId),
+        isDeleted: false,
+        isRead: false,
+      },
+      { isRead: true },
+    ).exec();
   }
 
   private mapMessageResponse(

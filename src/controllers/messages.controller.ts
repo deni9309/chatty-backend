@@ -77,4 +77,29 @@ export class MessagesController {
       next(error);
     }
   }
+
+  async markMineMessagesFromSenderAsRead(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
+    const currentUserId = req.user?._id; // receiverId
+    if (!currentUserId) throw new UnauthorizedException();
+
+    const senderId = req.params.senderId;
+    if (!senderId || !Types.ObjectId.isValid(senderId)) {
+      throw new BadRequestException('Sender ID is not valid or missing');
+    }
+
+    try {
+      await this.messagesService.markMineMessagesFromSenderAsRead(
+        senderId,
+        currentUserId,
+      );
+
+      res.status(200).json({ message: 'Messages marked as read' });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

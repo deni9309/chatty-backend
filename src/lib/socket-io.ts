@@ -25,6 +25,14 @@ export function getReceiverSocketId(userId: string) {
   return userSocketMap.get(userId);
 }
 
+export function getUserSocketMap(): Map<string, string> {
+  return userSocketMap;
+}
+
+export function getOnlineUserIds(): string[] {
+  return Array.from(userSocketMap.keys());
+}
+
 // Cleanup orphaned connections every minute
 setInterval(() => {
   let cleanedUp = 0;

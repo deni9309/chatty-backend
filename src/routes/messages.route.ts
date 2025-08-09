@@ -34,4 +34,10 @@ router.post(
   messagesController.create.bind(messagesController),
 );
 
+router.put(
+  '/mark-read/:senderId',
+  authMiddleware,
+  messagesController.markMineMessagesFromSenderAsRead.bind(messagesController),
+);
+
 export default router;
