@@ -34,6 +34,12 @@ router.post(
   messagesController.create.bind(messagesController),
 );
 
+router.get(
+  '/unread',
+  authMiddleware,
+  messagesController.getMineUnreadMessages.bind(messagesController),
+);
+
 router.put(
   '/mark-read/:senderId',
   authMiddleware,

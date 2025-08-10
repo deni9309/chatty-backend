@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { NextFunction, Response } from 'express';
+import e, { NextFunction, Response } from 'express';
 import { Types } from 'mongoose';
 
 import { MessagesService } from '../services/messages.service';
@@ -73,6 +73,24 @@ export class MessagesController {
       );
 
       res.status(201).json(message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMineUnreadMessages(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
+    const currentUserId = req.user?._id; // receiverId
+    if (!currentUserId) throw new UnauthorizedException();
+
+    try {
+      const unreadMessages =
+        await this.messagesService.getMineUnreadMessages(currentUserId);
+
+      res.status(200).json(unreadMessages);
     } catch (error) {
       next(error);
     }
