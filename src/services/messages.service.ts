@@ -56,9 +56,6 @@ export class MessagesService {
       Message.countDocuments(query).exec(),
     ]);
     
-    // just for testing
-    console.log(messages.map(m => m.createdAt.toLocaleString()));
-    
     return {
       messages: messages.reverse(),
       pagination: {
