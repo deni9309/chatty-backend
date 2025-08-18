@@ -26,6 +26,8 @@ export class MessagesService {
   async getMessagesForMeAndUser(
     currentUserId: Types.ObjectId,
     userId: Types.ObjectId,
+    page: number = 1,
+    limit: number = 20,
     startDate?: Date,
     endDate?: Date,
   ) {
@@ -43,7 +45,29 @@ export class MessagesService {
       if (endDate) query.createdAt.$lte = endDate;
     }
 
-    return Message.find(query).sort({ createdAt: 1 }).lean<IMessage[]>().exec();
+    const skip = (page - 1) * limit;
+    const [messages, totalCount] = await Promise.all([
+      Message.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean<IMessage[]>()
+        .exec(),
+      Message.countDocuments(query).exec(),
+    ]);
+    
+    // just for testing
+    console.log(messages.map(m => m.createdAt.toLocaleString()));
+    
+    return {
+      messages: messages.reverse(),
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        hasMore: skip + messages.length < totalCount,
+      },
+    };
   }
 
   async createMessage(

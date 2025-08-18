@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import e, { NextFunction, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { Types } from 'mongoose';
 
 import { MessagesService } from '../services/messages.service';
@@ -38,12 +38,14 @@ export class MessagesController {
     if (!userId || !Types.ObjectId.isValid(userId))
       throw new BadRequestException('User ID is not valid or missing');
 
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, page = '1', limit = '20' } = req.query;
 
     try {
       const userMessages = await this.messagesService.getMessagesForMeAndUser(
         new Types.ObjectId(currentUserId),
         new Types.ObjectId(userId),
+        parseInt(page as string),
+        parseInt(limit as string),
         startDate ? new Date(startDate as string) : undefined,
         endDate ? new Date(endDate as string) : undefined,
       );
