@@ -5,6 +5,7 @@ import { Types } from 'mongoose';
 import { MessagesService } from '../services/messages.service';
 import { RequestWithUser } from '../interfaces';
 import { BadRequestException, UnauthorizedException } from '../exceptions';
+import { MESSAGE_PAGE_SIZE } from '../constants/message.constants';
 
 @injectable()
 export class MessagesController {
@@ -38,7 +39,7 @@ export class MessagesController {
     if (!userId || !Types.ObjectId.isValid(userId))
       throw new BadRequestException('User ID is not valid or missing');
 
-    const { startDate, endDate, page = '1', limit = '20' } = req.query;
+    const { startDate, endDate, page = '1', limit = MESSAGE_PAGE_SIZE } = req.query;
 
     try {
       const userMessages = await this.messagesService.getMessagesForMeAndUser(
