@@ -6,6 +6,7 @@ import { MessagesService } from '../services/messages.service';
 import { RequestWithUser } from '../interfaces';
 import { BadRequestException, UnauthorizedException } from '../exceptions';
 import { MESSAGE_PAGE_SIZE } from '../constants/message.constants';
+import { USER_PAGE_SIZE } from '../constants/user.constants';
 
 @injectable()
 export class MessagesController {
@@ -20,8 +21,12 @@ export class MessagesController {
     }
 
     try {
-      const users = await this.messagesService.getUsers(currentUserId);
-      res.status(200).json(users);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || USER_PAGE_SIZE;
+      const search = (req.query.search as string) || '';
+
+      const result = await this.messagesService.getUsers({ currentUserId, page, limit, search });
+      res.status(200).json(result);
     } catch (error) {
       next(error);
     }
@@ -39,7 +44,12 @@ export class MessagesController {
     if (!userId || !Types.ObjectId.isValid(userId))
       throw new BadRequestException('User ID is not valid or missing');
 
-    const { startDate, endDate, page = '1', limit = MESSAGE_PAGE_SIZE } = req.query;
+    const {
+      startDate,
+      endDate,
+      page = '1',
+      limit = MESSAGE_PAGE_SIZE,
+    } = req.query;
 
     try {
       const userMessages = await this.messagesService.getMessagesForMeAndUser(

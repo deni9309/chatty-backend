@@ -9,18 +9,46 @@ import { UnprocessableEntityException } from '../exceptions';
 import { TMessage, TMessagePopulated } from '../types/message.type';
 import { getOnlineUserIds, getReceiverSocketId, io } from '../lib/socket-io';
 import UnreadMessage from '../models/unread-message.model';
+import GetUsersParams from '../interfaces/get-user-params.interface';
 
 @injectable()
 export class MessagesService {
-  async getUsers(currentUserId: string) {
-    return User.find({
+  async getUsers({ currentUserId, page, limit, search }: GetUsersParams) {
+    const skip = (page - 1) * limit;
+    const query: FilterQuery<IUser> = {
       _id: { $ne: new Types.ObjectId(currentUserId) },
       isDeleted: false,
-    })
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .lean<Partial<IUser[]>>()
-      .exec();
+    };
+
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [users, totalCount] = await Promise.all([
+      User.find(query)
+        .select('-password')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean<Partial<IUser[]>>()
+        .exec(),
+      User.countDocuments(query).exec(),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data: users,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        hasMore: page < totalPages,
+      },
+    };
   }
 
   async getMessagesForMeAndUser(
@@ -55,7 +83,7 @@ export class MessagesService {
         .exec(),
       Message.countDocuments(query).exec(),
     ]);
-    
+
     return {
       messages: messages.reverse(),
       pagination: {
