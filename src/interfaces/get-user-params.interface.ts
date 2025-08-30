@@ -3,5 +3,6 @@ export default interface GetUsersParams {
   page: number;
   limit: number;
   search: string;
+  onlineOnly?: boolean;
 }
 

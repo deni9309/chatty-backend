@@ -16,16 +16,22 @@ export class MessagesController {
 
   async getUsers(req: RequestWithUser, res: Response, next: NextFunction) {
     const currentUserId = req.user?._id;
-    if (!currentUserId) {
-      throw new UnauthorizedException();
-    }
+    if (!currentUserId) return next(new UnauthorizedException());
 
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || USER_PAGE_SIZE;
       const search = (req.query.search as string) || '';
 
-      const result = await this.messagesService.getUsers({ currentUserId, page, limit, search });
+      const onlineOnly = (req.query.onlineOnly as string) === 'true';
+
+      const result = await this.messagesService.getUsers({
+        currentUserId,
+        page,
+        limit,
+        search,
+        onlineOnly,
+      });
       res.status(200).json(result);
     } catch (error) {
       next(error);

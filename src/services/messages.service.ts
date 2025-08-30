@@ -13,7 +13,13 @@ import GetUsersParams from '../interfaces/get-user-params.interface';
 
 @injectable()
 export class MessagesService {
-  async getUsers({ currentUserId, page, limit, search }: GetUsersParams) {
+  async getUsers({
+    currentUserId,
+    page,
+    limit,
+    search,
+    onlineOnly,
+  }: GetUsersParams) {
     const skip = (page - 1) * limit;
     const query: FilterQuery<IUser> = {
       _id: { $ne: new Types.ObjectId(currentUserId) },
@@ -25,6 +31,14 @@ export class MessagesService {
         { fullName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    if (onlineOnly) {
+      const onlineIds = getOnlineUserIds().map(
+        (_id) => new Types.ObjectId(_id),
+      );
+
+      query._id = { ...query._id, $in: onlineIds };
     }
 
     const [users, totalCount] = await Promise.all([
