@@ -30,6 +30,12 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   }),
 );
+
+// Health Check Route
+app.get('/', (req, res) => {
+  res.status(200).json({ message: "Server is alive and running!" });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messagesRoutes);
 
