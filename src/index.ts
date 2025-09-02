@@ -11,6 +11,7 @@ import { server, app } from './lib/socket-io';
 import authRoutes from './routes/auth.route';
 import messagesRoutes from './routes/messages.route';
 import { errorHandler } from './middleware/error.middleware';
+import { getAllowedOrigins } from './lib/utils';
 
 const PORT = process.env.PORT || 5001;
 
@@ -18,7 +19,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: getAllowedOrigins(),
     credentials: true,
     allowedHeaders: [
       'Authorization',
@@ -34,13 +35,15 @@ app.use('/api/messages', messagesRoutes);
 
 app.use(errorHandler);
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(path.resolve(), '../frontend/dist')));
+// if (process.env.NODE_ENV === 'production') {
+//   app.use(express.static(path.join(path.resolve(), '../frontend/dist')));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(path.resolve(), '../frontend', 'dist', 'index.html'));
-  });
-}
+//   app.get('*', (req, res) => {
+//     res.sendFile(
+//       path.join(path.resolve(), '../frontend', 'dist', 'index.html'),
+//     );
+//   });
+// }
 
 server.listen(PORT, () => {
   console.log(`Server is running on PORT: ${PORT}`);
