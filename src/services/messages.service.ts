@@ -7,7 +7,8 @@ import { IMessage, IUnreadMessage, IUser } from '../interfaces';
 import { CreateMessageDto } from '../dtos/messages/create-message.dto';
 import { UnprocessableEntityException } from '../exceptions';
 import { TMessage, TMessagePopulated } from '../types/message.type';
-import { getOnlineUserIds, getReceiverSocketId, io } from '../lib/socket-io';
+import { io } from '../lib/socket-instance';
+import { getOnlineUserIds, getUserSocketId } from '../lib/socket-io';
 import UnreadMessage from '../models/unread-message.model';
 import GetUsersParams from '../interfaces/get-user-params.interface';
 
@@ -133,7 +134,7 @@ export class MessagesService {
         select: 'fullName email profilePic',
       });
 
-      const receiverSocketId = getReceiverSocketId(receiverId);
+      const receiverSocketId = getUserSocketId(receiverId);
       if (receiverSocketId) {
         io.to(receiverSocketId).emit(
           'new_message',

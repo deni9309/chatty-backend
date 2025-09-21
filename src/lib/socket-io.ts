@@ -1,28 +1,11 @@
-import { Server } from 'socket.io';
-import http from 'http';
-import express from 'express';
-import { getAllowedOrigins } from './utils';
-
-const app = express();
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: getAllowedOrigins(),
-    credentials: true,
-    allowedHeaders: [
-      'Authorization',
-      'Content-Type',
-      'x-csrf-token',
-      'x-refresh-token',
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  },
-});
+import { io, app, server } from './socket-instance';
+import { container } from 'tsyringe';
+import { GamesService } from '../services/games.service';
 
 const userSocketMap = new Map<string, string>();
+const gameService = container.resolve(GamesService);
 
-export function getReceiverSocketId(userId: string) {
+export function getUserSocketId(userId: string) {
   return userSocketMap.get(userId);
 }
 
@@ -76,8 +59,66 @@ io.on('connection', (socket) => {
       `User with ID ${userId} is online.\nOnline users: ${userSocketMap.size}`,
     );
 
+    // -- Game-related event handlers --
+    socket.on('game:invite', ({ recipientId }: { recipientId: string }) => {
+      const invitation = gameService.createInvitation(userId, recipientId);
+
+      if (!invitation) {
+        socket.emit('game:error', { message: 'User is offline' });
+      }
+    });
+
+    socket.on(
+      'game:accept_invitation',
+      ({ invitationId }: { invitationId: string }) => {
+        const game = gameService.acceptInvitation(invitationId, userId);
+        if (!game) {
+          socket.emit('game:error', {
+            message: 'Invalid or expired invitation',
+          });
+        }
+      },
+    );
+
+    // Decline game invitation
+    socket.on(
+      'game:decline_invitation',
+      ({ invitationId }: { invitationId: string }) => {
+        gameService.declineInvitation(invitationId, userId);
+      },
+    );
+
+    // Make a move
+    socket.on(
+      'game:move',
+      ({ gameId, position }: { gameId: string; position: number }) => {
+        const updatedGame = gameService.makeMove(gameId, userId, position);
+
+        if (!updatedGame) {
+          socket.emit('game:error', { message: 'Invalid move' });
+        }
+      },
+    );
+
+    // Resign from game
+    socket.on('game:resign', ({ gameId }: { gameId: string }) => {
+      gameService.resignGame(gameId, userId);
+    });
+
+    //Rejoin an existing game (for reconnection)
+    socket.on('game:rejoin', ({ gameId }: { gameId: string }) => {
+      const game = gameService.rejoinGame(gameId, userId);
+
+      if (game) {
+        socket.emit('game:rejoined', { game });
+      } else {
+        socket.emit('game:error', { message: 'Game not found' });
+      }
+    });
+
+    // -- Typing events --
     socket.on('typing', ({ receiverId }: { receiverId: string }) => {
-      const receiverSocketId = getReceiverSocketId(receiverId);
+      const receiverSocketId = getUserSocketId(receiverId);
       if (receiverSocketId) {
         socket.to(receiverSocketId).emit('user_typing', {
           userId,
@@ -87,7 +128,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('stop_typing', ({ receiverId }: { receiverId: string }) => {
-      const receiverSocketId = getReceiverSocketId(receiverId);
+      const receiverSocketId = getUserSocketId(receiverId);
       if (receiverSocketId) {
         socket.to(receiverSocketId).emit('user_typing', {
           userId,
@@ -104,6 +145,11 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', (reason) => {
     console.log('A user disconnected', socket.id, 'Reason:', reason);
+
+    // Check if user was in a game
+    if (userId) {
+      gameService.handleUserDisconnect(userId);
+    }
 
     for (const [userId, socketId] of userSocketMap.entries()) {
       if (socketId === socket.id) {
